@@ -1,5 +1,5 @@
 
-# GrabHack — Monolith on PostgreSQL + Synapse Agent (Groq + Tools)
+# Hermes on PostgreSQL + Synapse Agent (Groq + Tools)
 Single **server.js** runs APIs, WebSocket, and serves four simple React dashboards (Customer/Partner have maps).
 
 
