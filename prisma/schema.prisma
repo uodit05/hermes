@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AppUser {
+  id        String            @id @default(uuid())
+  role      Role
+  name      String
+  phone     String?           @unique
+  email     String?           @unique
+  createdAt DateTime          @default(now())
+  addresses CustomerAddress[]
+  orders    Order[]
+}
+
+enum Role {
+  customer
+  partner
+  merchant
+  admin
+}
+
+model Merchant {
+  id           String       @id @default(uuid())
+  name         String
+  placeId      String?
+  lat          Float?
+  lng          Float?
+  serviceClass ServiceClass
+  prepTimeSec  Int          @default(900)
+  isOpen       Boolean      @default(true)
+  orders       Order[]
+}
+
+enum ServiceClass {
+  food_mart
+  express_dropoff
+  car_pickup
+}
+
+model Partner {
+  id            String        @id @default(uuid())
+  name          String
+  vehicleType   VehicleType
+  capacityKg    Float         @default(15)
+  status        PartnerStatus @default(idle)
+  lat           Float?
+  lng           Float?
+  rating        Float         @default(5)
+  lastHeartbeat DateTime?
+  assignments   Assignment[]
+  orders        Order[]
+
+  @@index([status])
+}
+
+enum VehicleType {
+  bike
+  car
+  auto
+  walker
+}
+
+enum PartnerStatus {
+  offline
+  idle
+  on_trip
+  breakdown
+}
+
+model CustomerAddress {
+  id         String  @id @default(uuid())
+  customer   AppUser @relation(fields: [customerId], references: [id])
+  customerId String
+  label      String?
+  rawAddress String?
+  validated  String?
+  lat        Float?
+  lng        Float?
+  pincode    String?
+  isDefault  Boolean @default(false)
+}
+
+model Order {
+  id          String          @id @default(uuid())
+  class       OrderClass
+  customer    AppUser?        @relation(fields: [customerId], references: [id])
+  customerId  String?
+  merchant    Merchant?       @relation(fields: [merchantId], references: [id])
+  merchantId  String?
+  partner     Partner?        @relation(fields: [partnerId], references: [id])
+  partnerId   String?
+  status      OrderStatus     @default(pending)
+  pickupLat   Float?
+  pickupLng   Float?
+  dropLat     Float?
+  dropLng     Float?
+  etaSec      Int?
+  slaDeadline DateTime?
+  prepReadyAt DateTime?
+  totalCents  Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  assignment  Assignment?
+  routes      RouteSnapshot[]
+  incidents   Incident[]
+  messages    Message[]
+
+  @@index([status])
+  @@index([partnerId])
+  @@index([merchantId])
+}
+
+enum OrderClass {
+  food_mart
+  express
+  car
+}
+
+enum OrderStatus {
+  pending
+  accepted
+  preparing
+  assigned
+  en_route_pickup
+  en_route_dropoff
+  arrived
+  completed
+  cancelled
+  disputed
+  paused
+}
+
+model Assignment {
+  id         String   @id @default(uuid())
+  order      Order    @relation(fields: [orderId], references: [id])
+  orderId    String   @unique
+  partner    Partner  @relation(fields: [partnerId], references: [id])
+  partnerId  String
+  score      Float?
+  algorithm  String?
+  accepted   Boolean  @default(true)
+  acceptedAt DateTime @default(now())
+
+  @@index([partnerId])
+}
+
+model RouteSnapshot {
+  id               String   @id @default(uuid())
+  order            Order    @relation(fields: [orderId], references: [id])
+  orderId          String
+  originLat        Float?
+  originLng        Float?
+  destLat          Float?
+  destLng          Float?
+  overviewPolyline String?
+  readableDistance String?
+  readableDuration String?
+  travelAdvisory   String?
+  createdAt        DateTime @default(now())
+}
+
+model Incident {
+  id         String        @id @default(uuid())
+  order      Order         @relation(fields: [orderId], references: [id])
+  orderId    String
+  type       String
+  details    Json?
+  detectedAt DateTime      @default(now())
+  resolved   Boolean       @default(false)
+  resolution Json?
+  toolCalls  ToolCallLog[]
+}
+
+model ToolCallLog {
+  id         String    @id @default(uuid())
+  incident   Incident? @relation(fields: [incidentId], references: [id])
+  incidentId String?
+  tool       String
+  request    Json?
+  response   Json?
+  status     String?
+  latencyMs  Int?
+  createdAt  DateTime  @default(now())
+  orderId    String?
+  role       String?
+}
+
+enum MessageRole {
+  customer
+  partner
+  merchant
+  ops
+  agent
+  system
+}
+
+model Message {
+  id        String      @id @default(uuid())
+  order     Order?      @relation(fields: [orderId], references: [id])
+  orderId   String?
+  role      MessageRole
+  text      String
+  meta      Json?
+  createdAt DateTime    @default(now())
+
+  @@index([orderId])
+}
+
+model AgentRun {
+  id        String   @id @default(uuid())
+  orderId   String
+  actorRole String
+  actorId   String?
+  prompt    String
+  plan      Json?
+  status    String
+  createdAt DateTime @default(now())
+}
