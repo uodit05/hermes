@@ -1,0 +1,6 @@
+.env
+scripts/
+prisma/
+apps/ops-ui/
+apps/customer-ui/
+apps/merchant-ui/
