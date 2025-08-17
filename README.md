@@ -2,6 +2,11 @@
 # GrabHack — Monolith on PostgreSQL + Synapse Agent (Groq + Tools)
 Single **server.js** runs APIs, WebSocket, and serves four simple React dashboards (Customer/Partner have maps).
 
+
+## Architecture diagram 
+![IMG-20250817-WA0016_1755432468467](https://github.com/user-attachments/assets/c874614c-f6bc-4cbf-9f0d-ab0439089ab2)
+
+
 ## Install & Run
 ```bash
 cp .env.example .env
